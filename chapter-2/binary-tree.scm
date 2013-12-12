@@ -1,0 +1,75 @@
+; Exercise 2.29
+; Constructors and Selectors
+(define (make-mobile left right)
+  (list left right))
+(define left-branch car)
+(define right-branch cadr)
+(define (make-branch len structure)
+  (list len structure))
+(define branch-length car)
+(define branch-structure cadr)
+(define (is-mobile? structure)
+  (and (pair? structure)
+       (pair? (car structure))))
+
+; Very very ugly, no asbraction here...
+(define (total-weight-ugly mobile)
+  (define (iter st)
+    (cond ((or (not (pair? st))
+               (null? st))
+           0)
+          ((and (not (pair? (car st)))
+                (not (pair? (cadr st))))
+           (cadr st))
+          (else (+ (iter (car st))
+                   (iter (cdr st))))))
+  (iter mobile))
+
+(define (total-weight node)
+  (define (branch-weight branch)
+    (if (null? branch) 0
+     (let ((structure (branch-structure branch)))
+      (if (not (is-mobile? structure)) structure ; if it's not a mobile, it must be weight value itself
+        (+ (branch-weight (left-branch structure)); otherwise, get the total weight of this mobile node
+           (branch-weight (right-branch structure)))))))
+  (if (is-mobile? node)
+      (+ (branch-weight (left-branch node))
+         (branch-weight (right-branch node)))
+      (branch-weight node)))
+      ;(error "It seems the node you give is not a mobile, check it again please")))
+
+(define (total-length node)
+  (define (b-length branch)
+     (if (null? branch) 0
+          (let ((structure (branch-structure branch))
+                (len (branch-length branch)))
+            (if (is-mobile? structure)
+              (+ len
+                 (b-length (left-branch structure))
+                 (b-length (right-branch structure)))
+              len))))
+    (if (is-mobile? node)
+      (+ (b-length (left-branch node))
+         (b-length (right-branch node)))
+      (b-length node)))
+
+(define (balance? mobile)
+  (if (is-mobile? mobile)
+    (let ((lb (left-branch mobile))
+          (rb (right-branch mobile)))
+        (and (balance? (branch-structure lb))
+             (balance? (branch-structure rb))
+             (= (* (total-length lb) (total-weight lb))
+                (* (total-length rb) (total-weight rb)))))
+    true))
+
+
+(define 4labs (make-branch 1 9))
+(define jira (make-branch 3 3))
+(define das (make-branch 9 1))
+(define suma (make-branch 3 3))
+(define s (make-mobile 4labs jira))
+(define j (make-mobile das suma))
+(define lb (make-branch 1 s))
+(define rb (make-branch 3 j))
+(define pds (make-mobile lb rb))

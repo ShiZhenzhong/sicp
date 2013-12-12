@@ -1,0 +1,75 @@
+(define (enum-interval low high)
+  (if (> low high) '()
+    (cons low
+          (enum-interval (1+ low) high))))
+
+(define (accumulate op init sequence)
+  (if (null? sequence) init
+    (op (car sequence)
+        (accumulate op init (cdr sequence)))))
+
+(define (flatmap proc seq)
+  (accumulate append '() (map proc seq)))
+
+; Exercise 2.42 Queens
+(define (queens board-size)
+  (define empty-board '())
+  (define (adjoin-position new-row k rest-of-queens)
+    (append rest-of-queens (list (cons k new-row))))
+
+  (define (safe? k positions)
+    (define (logic-accumulate seq)
+      (accumulate (lambda (x y) (and x y)) true seq))
+    (define (position-value row col)
+      (+ row (* board-size (-1+ col))))
+
+    (let ((new-added-row (cdar (reverse positions)))
+          (base-remainder (list (-1+ board-size) board-size (1+ board-size))))
+        (let ((new-pv (position-value new-added-row k)))
+          (logic-accumulate
+            (map (lambda (position)
+                   (let ((r (cdr position))
+                         (c (car position)))
+                     (logic-accumulate
+                       (map (lambda (br)
+                              (let ((pv-difference (- new-pv (position-value r c)))
+                                    (col-difference (- k c)))
+                                (not (= pv-difference (* br col-difference)))))
+                            base-remainder))))
+                 (cdr (reverse positions)))))))
+
+  (define (queen-cols k)
+    (if (= k 0) (list empty-board)
+      (filter
+        (lambda (positions)
+          (safe? k positions))
+        (flatmap
+          (lambda (rest-of-queens)
+            (map (lambda (new-row)
+                   (adjoin-position new-row k rest-of-queens))
+                 (enum-interval 1 board-size)))
+          (queen-cols (-1+ k))))))
+  (draw-queens-position (queen-cols board-size) board-size))
+
+(define (draw-queens-position solutions board-size)
+    (define (draw-header)
+      (for-each display (map (lambda (x) "----") (enum-interval 1 board-size)))
+      (newline))
+    (define (draw-row queen-position)
+      (let ((bs (enum-interval 1 board-size)))
+          (for-each display (map (lambda (x)
+                                         (if (= 1 x) (display "|") (display ""))
+                                         (if (= queen-position x) " O |" "   |"))
+                                 bs))
+          (newline)
+          (for-each display (map (lambda (x) "----") bs))
+          (newline)))
+    (for-each (lambda (s)
+                (display "Queens Positions:")
+                (newline)
+                (draw-header)
+                (for-each (lambda (row) (draw-row  (cdr row))) 
+                          s)) 
+              solutions)
+    (display (length solutions))
+    (display " Solutions Found!"))
