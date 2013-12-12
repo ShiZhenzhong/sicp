@@ -47,10 +47,8 @@
 ; public interfaces for rational number
 (define (make-rational n d)
   ((get 'make-rational 'rational) n d))
-(define (rat-numer r)
-  ((get 'numer 'rational) r))
-(define (rat-denom r)
-  ((get 'denom 'rational) r))
+(define (rat-numer r) (apply-generic 'numer r))
+(define (rat-denom r) (apply-generic 'denom r))
 
 ; public interfaces for complex number
 (define (make-from-real-imag real imag)
@@ -94,14 +92,18 @@
   (define (equ-rat? x y)
     (= (* (numer x) (denom y))
        (* (numer y) (denom x))))
+  (define (tag r)
+    (attach-type 'rational r))
+  (define (domath proc . args)
+    (tag (apply proc args)))
 
-  (put 'add '(rational rational) add-rat)
-  (put 'sub '(rational rational) sub-rat)
-  (put 'mul '(rational rational) mul-rat)
-  (put 'div '(rational rational) div-rat)
-  (put 'make-rational 'rational (lambda (n d) (cons 'rational (make-rat n d))))
-  (put 'numer 'rational (lambda (r) (numer (content r))))
-  (put 'denom 'rational (lambda (r) (denom (content r))))
+  (put 'add '(rational rational) (lambda (x y) (tag (add-rat x y))))
+  (put 'sub '(rational rational) (lambda (x y) (tag (sub-rat x y))))
+  (put 'mul '(rational rational) (lambda (x y) (tag (mul-rat x y))))
+  (put 'div '(rational rational) (lambda (x y) (tag (div-rat x y))))
+  (put 'make-rational 'rational (lambda (n d) (tag (make-rat n d))))
+  (put 'numer '(rational) numer)
+  (put 'denom '(rational) denom)
   (put 'equ? '(rational rational) equ-rat?)
   'done)
 
